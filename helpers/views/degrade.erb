@@ -1,0 +1,24 @@
+Couleurs!
+<table style="width:100%;">
+  <tr>
+<% colors.each_with_index do |color, idx| %>
+   <td style="background-color:rgb( <%= color[:r] %>,<%= color[:g] %>,<%= color[:b] %>);">&nbsp;</td>
+   <% if idx % size == size-1 %>
+     <tr></tr>
+   <% end %>
+<% end %>
+  </tr>
+</table>
+
+Reverse !
+<table>
+<tr>
+
+<% colors.reverse.each_with_index do |color, idx| %>
+   <td style="background-color:rgb( <%= color[:r] %>,<%= color[:g] %>,<%= color[:b] %>);">&nbsp;</td>
+   <% if idx % size == size-1 %>
+     <tr></tr>
+   <% end %>
+<% end %>
+  </tr>
+</table>
