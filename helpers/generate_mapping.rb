@@ -7,20 +7,21 @@
 #
 # the code generate C code 
 # to fill a structure like  struct S_Word { byte pos, byte len }
+# The order is reversed to be read by pgm_read_word_near
 
 HORLOGE =   <<~EOF
 IL#ESTRUNELDIX 
 MINUITDEUXSEPT 
-QUATREMIDICING 
+QUATREMIDICINQ 
 HUIT-TROISNEUF 
 SIXONZE+HEURES 
 TRENTEQUARANTE 
 VINGTCINQUANTE 
-DIXQUATRESEPTI 
-UNE#TROISSEIZE 
+DIXQUATRETCINQ 
+UNE-TROISSEIZE 
 SIXEPILE!DEUXF 
 ONZELNEUFCHUIT 
-UEDOUZEACINQUE 
+UEDOUZEASEPTUE 
 QUATORZETREIZE 
 CQUINZEADEGRES 
 EOF
@@ -53,7 +54,7 @@ Heures = [
     [ "ONZE",    "HEURES",  ],
 ]               
 Minutes = [
-    [   "PILE",    "",    "",      ],  
+    [   "PILE!",   "",    "",      ],  
     [   "UNE",     "",    "",      ],  
     [   "DEUX",    "",    "",      ],  
     [   "TROIS",   "",    "",      ],  
@@ -114,33 +115,56 @@ Minutes = [
      [   "CINQUANTE","HUIT",   "",   ],   
      [   "CINQUANTE","NEUF",   "",   ],  
 ]
-HORLOGE = HORLOGE.split.join("")
-puts HORLOGE
 
-puts "struct s_HourCode tHourWords[] = "
+COTE = 14
+MATRIX = HORLOGE.split.join("")
+MINUTES_off = 5*COTE    # minutes start at row 6, skip 5 rows
+puts MATRIX
+
+puts
+puts "/*"
+puts " * Code based under the following word clock"
+puts HORLOGE
+puts "*/"  
+puts
+puts "const PROGMEM struct s_HourCode tHourWords[] = "
 puts "{"
 Heures.each do |words|
   print "  { " 
   words.each do |word|
-    pos = HORLOGE.index(word)
-    print "  {  %3d,  %2d  }, " % [pos, word.length ]
+    pos = MATRIX.index(word)
+    # reverse odd rows according to the wiring
+    if ( (pos / COTE) % 2 == 1) 
+           # puts "word is #{word}, pos is #{pos}/#{word.length}"
+          pos =    (pos / COTE) * COTE +
+                   (COTE - (pos % COTE + word.length) )
+      end
+    print "  { %3d,  %2d  }, " % [ pos, word.length ]
   end
-  print " },     // Words -%s %s-" % words
+  print " },     // Words \"%s\"" % words.join(' ')
   puts
 end
 puts "};"
 
 # find words starting at the 5th line 
-puts "struct s_MinuteCode tMinuteWords[] = "
+puts "const PROGMEM struct s_MinuteCode tMinuteWords[] = "
 puts "{"
 Minutes.each do |words|
   print "  { " 
   words.each do |word|
-    pos = HORLOGE.rindex(word)
-    print "  {  %3d,  %2d  }, " % [pos, word.length ]
+    if (word=="CINQ")   # avoid CINQUANTE
+        pos = MATRIX.rindex(word) 
+    else
+        pos = MATRIX.index(word, MINUTES_off)
+    end
+    # reverse odd rows according to the wiring
+    if ( (pos / COTE) % 2 == 0) 
+          pos =    (pos / COTE) * COTE +
+                   (COTE - (pos % COTE + word.length) )
+      end
+    print "  { %3d,  %2d  }, " % [ pos - MINUTES_off, word.length ]
   end
-  print " },     // Words -%s %s %s-" % words
+  print " },     // Words \"%s\"" % words.join(' ')
   puts
 end
 puts "};"
-
