@@ -11,6 +11,7 @@
 
 #include <Arduino.h>
 #include <string.h>
+#include <stddef.h>
 
 // Keep the constant data into the Code Segment, not in the RAM 
 #include <avr/pgmspace.h>
@@ -18,120 +19,124 @@
 #include "horloge.h"
 
 /*
- * Code genere sur la base de l'horloge suivante
-        "IL#ESTRUNELDIX" 
-        "MINUITDEUXSEPT" 
-        "QUATREMIDICING" 
-        "HUIT-TROISNEUF" 
-        "SIXONZE+HEURES" 
-        "TRENTEQUARANTE" 
-        "VINGTCINQUANTE" 
-        "DIXQUATRESEPTI" 
-        "UNE#TROISSEIZE" 
-        "SIXEPILE!DEUXF" 
-        "ONZELNEUFCHUIT" 
-        "UEDOUZEACINQUE" 
-        "QUATORZETREIZE" 
-        "CQUINZEADEGRES" 
+ * Code based under the following word clock
+IL#ESTRUNELDIX 
+MINUITDEUXSEPT 
+QUATREMIDICINQ 
+HUIT-TROISNEUF 
+SIXONZE+HEURES 
+TRENTEQUARANTE 
+VINGTCINQUANTE 
+DIXQUATRETCINQ 
+UNE-TROISSEIZE 
+SIXEPILE!DEUXF 
+ONZELNEUFCHUIT 
+UEDOUZEASEPTUE 
+QUATORZETREIZE 
+CQUINZEADEGRES 
 */
 
 const PROGMEM struct s_HourCode tHourWords[] = 
 {
-  {   {  14,   6  },   {   0,   0  },  },     // Words "MINUIT "
+  {   {  22,   6  },   {   0,   0  },  },     // Words "MINUIT "
   {   {   7,   3  },   {  64,   5  },  },     // Words "UNE HEURE"
-  {   {  20,   4  },   {  64,   6  },  },     // Words "DEUX HEURES"
-  {   {  47,   5  },   {  64,   6  },  },     // Words "TROIS HEURES"
+  {   {  18,   4  },   {  64,   6  },  },     // Words "DEUX HEURES"
+  {   {  46,   5  },   {  64,   6  },  },     // Words "TROIS HEURES"
   {   {  28,   6  },   {  64,   6  },  },     // Words "QUATRE HEURES"
-  {   {  89,   4  },   {  64,   6  },  },     // Words "CINQ HEURES"
+  {   {  38,   4  },   {  64,   6  },  },     // Words "CINQ HEURES"
   {   {  56,   3  },   {  64,   6  },  },     // Words "SIX HEURES"
-  {   {  24,   4  },   {  64,   6  },  },     // Words "SEPT HEURES"
-  {   {  42,   4  },   {  64,   6  },  },     // Words "HUIT HEURES"
-  {   {  52,   4  },   {  64,   6  },  },     // Words "NEUF HEURES"
+  {   {  14,   4  },   {  64,   6  },  },     // Words "SEPT HEURES"
+  {   {  52,   4  },   {  64,   6  },  },     // Words "HUIT HEURES"
+  {   {  42,   4  },   {  64,   6  },  },     // Words "NEUF HEURES"
   {   {  11,   3  },   {  64,   6  },  },     // Words "DIX HEURES"
   {   {  59,   4  },   {  64,   6  },  },     // Words "ONZE HEURES"
   {   {  34,   4  },   {   0,   0  },  },     // Words "MIDI "
   {   {   7,   3  },   {  64,   5  },  },     // Words "UNE HEURE"
-  {   {  20,   4  },   {  64,   6  },  },     // Words "DEUX HEURES"
-  {   {  47,   5  },   {  64,   6  },  },     // Words "TROIS HEURES"
+  {   {  18,   4  },   {  64,   6  },  },     // Words "DEUX HEURES"
+  {   {  46,   5  },   {  64,   6  },  },     // Words "TROIS HEURES"
   {   {  28,   6  },   {  64,   6  },  },     // Words "QUATRE HEURES"
-  {   {  89,   4  },   {  64,   6  },  },     // Words "CINQ HEURES"
+  {   {  38,   4  },   {  64,   6  },  },     // Words "CINQ HEURES"
   {   {  56,   3  },   {  64,   6  },  },     // Words "SIX HEURES"
-  {   {  24,   4  },   {  64,   6  },  },     // Words "SEPT HEURES"
-  {   {  42,   4  },   {  64,   6  },  },     // Words "HUIT HEURES"
-  {   {  52,   4  },   {  64,   6  },  },     // Words "NEUF HEURES"
+  {   {  14,   4  },   {  64,   6  },  },     // Words "SEPT HEURES"
+  {   {  52,   4  },   {  64,   6  },  },     // Words "HUIT HEURES"
+  {   {  42,   4  },   {  64,   6  },  },     // Words "NEUF HEURES"
   {   {  11,   3  },   {  64,   6  },  },     // Words "DIX HEURES"
   {   {  59,   4  },   {  64,   6  },  },     // Words "ONZE HEURES"
 };
 const PROGMEM struct s_MinuteCode tMinuteWords[] = 
 {
-  {   { 130,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "PILE  "
-  {   { 112,   3  },   { 196,   0  },   { 196,   0  },  },     // Words "UNE  "
-  {   { 135,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "DEUX  "
-  {   { 116,   5  },   { 196,   0  },   { 196,   0  },  },     // Words "TROIS  "
-  {   { 101,   6  },   { 196,   0  },   { 196,   0  },  },     // Words "QUATRE  "
-  {   { 162,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "CINQ  "
-  {   { 126,   3  },   { 196,   0  },   { 196,   0  },  },     // Words "SIX  "
-  {   { 107,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "SEPT  "
-  {   { 150,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "HUIT  "
-  {   { 145,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "NEUF  "
-  {   {  98,   3  },   { 196,   0  },   { 196,   0  },  },     // Words "DIX  "
-  {   { 140,   4  },   { 196,   0  },   { 196,   0  },  },     // Words "ONZE  "
-  {   { 156,   5  },   { 196,   0  },   { 196,   0  },  },     // Words "DOUZE  "
-  {   { 176,   6  },   { 196,   0  },   { 196,   0  },  },     // Words "TREIZE  "
-  {   { 168,   8  },   { 196,   0  },   { 196,   0  },  },     // Words "QUATORZE  "
-  {   { 183,   6  },   { 196,   0  },   { 196,   0  },  },     // Words "QUINZE  "
-  {   { 121,   5  },   { 196,   0  },   { 196,   0  },  },     // Words "SEIZE  "
-  {   {  98,   3  },   {  46,   1  },   { 107,   4  },  },     // Words "DIX - SEPT"
-  {   {  98,   3  },   {  46,   1  },   { 150,   4  },  },     // Words "DIX - HUIT"
-  {   {  98,   3  },   {  46,   1  },   { 145,   4  },  },     // Words "DIX - NEUF"
-  {   {  84,   5  },   { 196,   0  },   { 196,   0  },  },     // Words "VINGT  "
-  {   {  84,   5  },   { 175,   2  },   { 112,   2  },  },     // Words "VINGT ET UN"
-  {   {  84,   5  },   { 135,   4  },   { 196,   0  },  },     // Words "VINGT DEUX "
-  {   {  84,   5  },   { 116,   5  },   { 196,   0  },  },     // Words "VINGT TROIS "
-  {   {  84,   5  },   { 101,   6  },   { 196,   0  },  },     // Words "VINGT QUATRE "
-  {   {  84,   5  },   { 162,   4  },   { 196,   0  },  },     // Words "VINGT CINQ "
-  {   {  84,   5  },   { 126,   3  },   { 196,   0  },  },     // Words "VINGT SIX "
-  {   {  84,   5  },   { 107,   4  },   { 196,   0  },  },     // Words "VINGT SEPT "
-  {   {  84,   5  },   { 150,   4  },   { 196,   0  },  },     // Words "VINGT HUIT "
-  {   {  84,   5  },   { 145,   4  },   { 196,   0  },  },     // Words "VINGT NEUF "
-  {   {  70,   6  },   { 196,   0  },   { 196,   0  },  },     // Words "TRENTE  "
-  {   {  70,   6  },   { 175,   2  },   { 112,   2  },  },     // Words "TRENTE ET UN"
-  {   {  70,   6  },   { 135,   4  },   { 196,   0  },  },     // Words "TRENTE DEUX "
-  {   {  70,   6  },   { 116,   5  },   { 196,   0  },  },     // Words "TRENTE TROIS "
-  {   {  70,   6  },   { 101,   6  },   { 196,   0  },  },     // Words "TRENTE QUATRE "
-  {   {  70,   6  },   { 162,   4  },   { 196,   0  },  },     // Words "TRENTE CINQ "
-  {   {  70,   6  },   { 126,   3  },   { 196,   0  },  },     // Words "TRENTE SIX "
-  {   {  70,   6  },   { 107,   4  },   { 196,   0  },  },     // Words "TRENTE SEPT "
-  {   {  70,   6  },   { 150,   4  },   { 196,   0  },  },     // Words "TRENTE HUIT "
-  {   {  70,   6  },   { 145,   4  },   { 196,   0  },  },     // Words "TRENTE NEUF "
-  {   {  76,   8  },   { 196,   0  },   { 196,   0  },  },     // Words "QUARANTE  "
-  {   {  76,   8  },   { 175,   2  },   { 112,   2  },  },     // Words "QUARANTE ET UN"
-  {   {  76,   8  },   { 135,   4  },   { 196,   0  },  },     // Words "QUARANTE DEUX "
-  {   {  76,   8  },   { 116,   5  },   { 196,   0  },  },     // Words "QUARANTE TROIS "
-  {   {  76,   8  },   { 101,   6  },   { 196,   0  },  },     // Words "QUARANTE QUATRE "
-  {   {  76,   8  },   { 162,   4  },   { 196,   0  },  },     // Words "QUARANTE CINQ "
-  {   {  76,   8  },   { 126,   3  },   { 196,   0  },  },     // Words "QUARANTE SIX "
-  {   {  76,   8  },   { 107,   4  },   { 196,   0  },  },     // Words "QUARANTE SEPT "
-  {   {  76,   8  },   { 150,   4  },   { 196,   0  },  },     // Words "QUARANTE HUIT "
-  {   {  76,   8  },   { 145,   4  },   { 196,   0  },  },     // Words "QUARANTE NEUF "
-  {   {  89,   9  },   { 196,   0  },   { 196,   0  },  },     // Words "CINQUANTE  "
-  {   {  89,   9  },   { 175,   2  },   { 112,   2  },  },     // Words "CINQUANTE ET UN"
-  {   {  89,   9  },   { 135,   4  },   { 196,   0  },  },     // Words "CINQUANTE DEUX "
-  {   {  89,   9  },   { 116,   5  },   { 196,   0  },  },     // Words "CINQUANTE TROIS "
-  {   {  89,   9  },   { 101,   6  },   { 196,   0  },  },     // Words "CINQUANTE QUATRE "
-  {   {  89,   9  },   { 162,   4  },   { 196,   0  },  },     // Words "CINQUANTE CINQ "
-  {   {  89,   9  },   { 126,   3  },   { 196,   0  },  },     // Words "CINQUANTE SIX "
-  {   {  89,   9  },   { 107,   4  },   { 196,   0  },  },     // Words "CINQUANTE SEPT "
-  {   {  89,   9  },   { 150,   4  },   { 196,   0  },  },     // Words "CINQUANTE HUIT "
-  {   {  89,   9  },   { 145,   4  },   { 196,   0  },  },     // Words "CINQUANTE NEUF "
+  {   {  60,   5  },   {   0,   0  },   {   0,   0  },  },     // Words "PILE!  "
+  {   {  53,   3  },   {   0,   0  },   {   0,   0  },  },     // Words "UNE  "
+  {   {  65,   4  },   {   0,   0  },   {   0,   0  },  },     // Words "DEUX  "
+  {   {  47,   5  },   {   0,   0  },   {   0,   0  },  },     // Words "TROIS  "
+  {   {  31,   6  },   {   0,   0  },   {   0,   0  },  },     // Words "QUATRE  "
+  {   {  38,   4  },   {   0,   0  },   {   0,   0  },  },     // Words "CINQ  "
+  {   {  56,   3  },   {   0,   0  },   {   0,   0  },  },     // Words "SIX  "
+  {   {  92,   4  },   {   0,   0  },   {   0,   0  },  },     // Words "SEPT  "
+  {   {  70,   4  },   {   0,   0  },   {   0,   0  },  },     // Words "HUIT  "
+  {   {  75,   4  },   {   0,   0  },   {   0,   0  },  },     // Words "NEUF  "
+  {   {  28,   3  },   {   0,   0  },   {   0,   0  },  },     // Words "DIX  "
+  {   {  80,   4  },   {   0,   0  },   {   0,   0  },  },     // Words "ONZE  "
+  {   {  86,   5  },   {   0,   0  },   {   0,   0  },  },     // Words "DOUZE  "
+  {   {  98,   6  },   {   0,   0  },   {   0,   0  },  },     // Words "TREIZE  "
+  {   { 104,   8  },   {   0,   0  },   {   0,   0  },  },     // Words "QUATORZE  "
+  {   { 113,   6  },   {   0,   0  },   {   0,   0  },  },     // Words "QUINZE  "
+  {   {  42,   5  },   {   0,   0  },   {   0,   0  },  },     // Words "SEIZE  "
+  {   {  28,   3  },   {  52,   1  },   {  92,   4  },  },     // Words "DIX - SEPT"
+  {   {  28,   3  },   {  52,   1  },   {  70,   4  },  },     // Words "DIX - HUIT"
+  {   {  28,   3  },   {  52,   1  },   {  75,   4  },  },     // Words "DIX - NEUF"
+  {   {  23,   5  },   {   0,   0  },   {   0,   0  },  },     // Words "VINGT  "
+  {   {  23,   5  },   {  36,   2  },   {  54,   2  },  },     // Words "VINGT ET UN"
+  {   {  23,   5  },   {  65,   4  },   {   0,   0  },  },     // Words "VINGT DEUX "
+  {   {  23,   5  },   {  47,   5  },   {   0,   0  },  },     // Words "VINGT TROIS "
+  {   {  23,   5  },   {  31,   6  },   {   0,   0  },  },     // Words "VINGT QUATRE "
+  {   {  23,   5  },   {  38,   4  },   {   0,   0  },  },     // Words "VINGT CINQ "
+  {   {  23,   5  },   {  56,   3  },   {   0,   0  },  },     // Words "VINGT SIX "
+  {   {  23,   5  },   {  92,   4  },   {   0,   0  },  },     // Words "VINGT SEPT "
+  {   {  23,   5  },   {  70,   4  },   {   0,   0  },  },     // Words "VINGT HUIT "
+  {   {  23,   5  },   {  75,   4  },   {   0,   0  },  },     // Words "VINGT NEUF "
+  {   {   0,   6  },   {   0,   0  },   {   0,   0  },  },     // Words "TRENTE  "
+  {   {   0,   6  },   {  36,   2  },   {  54,   2  },  },     // Words "TRENTE ET UN"
+  {   {   0,   6  },   {  65,   4  },   {   0,   0  },  },     // Words "TRENTE DEUX "
+  {   {   0,   6  },   {  47,   5  },   {   0,   0  },  },     // Words "TRENTE TROIS "
+  {   {   0,   6  },   {  31,   6  },   {   0,   0  },  },     // Words "TRENTE QUATRE "
+  {   {   0,   6  },   {  38,   4  },   {   0,   0  },  },     // Words "TRENTE CINQ "
+  {   {   0,   6  },   {  56,   3  },   {   0,   0  },  },     // Words "TRENTE SIX "
+  {   {   0,   6  },   {  92,   4  },   {   0,   0  },  },     // Words "TRENTE SEPT "
+  {   {   0,   6  },   {  70,   4  },   {   0,   0  },  },     // Words "TRENTE HUIT "
+  {   {   0,   6  },   {  75,   4  },   {   0,   0  },  },     // Words "TRENTE NEUF "
+  {   {   6,   8  },   {   0,   0  },   {   0,   0  },  },     // Words "QUARANTE  "
+  {   {   6,   8  },   {  36,   2  },   {  54,   2  },  },     // Words "QUARANTE ET UN"
+  {   {   6,   8  },   {  65,   4  },   {   0,   0  },  },     // Words "QUARANTE DEUX "
+  {   {   6,   8  },   {  47,   5  },   {   0,   0  },  },     // Words "QUARANTE TROIS "
+  {   {   6,   8  },   {  31,   6  },   {   0,   0  },  },     // Words "QUARANTE QUATRE "
+  {   {   6,   8  },   {  38,   4  },   {   0,   0  },  },     // Words "QUARANTE CINQ "
+  {   {   6,   8  },   {  56,   3  },   {   0,   0  },  },     // Words "QUARANTE SIX "
+  {   {   6,   8  },   {  92,   4  },   {   0,   0  },  },     // Words "QUARANTE SEPT "
+  {   {   6,   8  },   {  70,   4  },   {   0,   0  },  },     // Words "QUARANTE HUIT "
+  {   {   6,   8  },   {  75,   4  },   {   0,   0  },  },     // Words "QUARANTE NEUF "
+  {   {  14,   9  },   {   0,   0  },   {   0,   0  },  },     // Words "CINQUANTE  "
+  {   {  14,   9  },   {  36,   2  },   {  54,   2  },  },     // Words "CINQUANTE ET UN"
+  {   {  14,   9  },   {  65,   4  },   {   0,   0  },  },     // Words "CINQUANTE DEUX "
+  {   {  14,   9  },   {  47,   5  },   {   0,   0  },  },     // Words "CINQUANTE TROIS "
+  {   {  14,   9  },   {  31,   6  },   {   0,   0  },  },     // Words "CINQUANTE QUATRE "
+  {   {  14,   9  },   {  38,   4  },   {   0,   0  },  },     // Words "CINQUANTE CINQ "
+  {   {  14,   9  },   {  56,   3  },   {   0,   0  },  },     // Words "CINQUANTE SIX "
+  {   {  14,   9  },   {  92,   4  },   {   0,   0  },  },     // Words "CINQUANTE SEPT "
+  {   {  14,   9  },   {  70,   4  },   {   0,   0  },  },     // Words "CINQUANTE HUIT "
+  {   {  14,   9  },   {  75,   4  },   {   0,   0  },  },     // Words "CINQUANTE NEUF "
 };
 
+void init_Horloge ()
+{
+   // empty
+}
 
 // retrieve data from code segment
-static get_word_pos_and_length (struct s_Word *myword, const struct s_Word *data)
+static void get_word_pos_and_length (struct s_Word *myword, const struct s_Word *data)
 {
-  myword->pos = pgm_read_byte_near ((byte *)data + offsetof (struct s_Word, pos));
-  myword->len = pgm_read_byte_near ((byte *)data + offsetof (struct s_Word, len));
+  myword->pos = pgm_read_byte ((byte *)data + offsetof (struct s_Word, pos));
+  myword->len = pgm_read_byte ((byte *)data + offsetof (struct s_Word, len));
 } // get_word_pos_and_length 
 
 

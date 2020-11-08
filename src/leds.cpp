@@ -13,13 +13,15 @@
 #include <avr/pgmspace.h>
 
 #include "horloge.h"
+#include "leds.h"
 
 #define COTE 14
 #define NUMPIXELS (COTE*COTE)
 
 
 // static Adafruit_NeoPixel strip(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-static Adafruit_NeoPixel *strip ; 
+static Adafruit_NeoPixel *hr_strip ; 
+static Adafruit_NeoPixel *mn_strip ; 
 
 
 struct S_Degrade
@@ -79,73 +81,81 @@ const PROGMEM struct S_Degrade tColors[] =
 //
 // initialization 
 // 
-void leds_init (int WS2812_PIN)
+void initLeds (int WS2812_PIN_HR, int WS2812_PIN_MN)
 {
 #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
   clock_prescale_set(clock_div_1);
 #endif
 
-   strip = new Adafruit_NeoPixel (NUMPIXELS, WS2812_PIN, NEO_GRB + NEO_KHZ800);              
-   strip->begin();            // INITIALIZE NeoPixel strip object (REQUIRED)
-   strip->clear();            // Turn OFF all pixels ASAP
-   strip->setBrightness(25);  // Set BRIGHTNESS to about 1/5 (max = 255)
+   hr_strip = new Adafruit_NeoPixel (MINUTES_off,             WS2812_PIN_HR, NEO_GRB + NEO_KHZ800);                 
+   hr_strip->begin();            // INITIALIZE NeoPixel strip object (REQUIRED)
+   hr_strip->clear();            // Turn OFF all pixels ASAP
+   hr_strip->setBrightness(25);  // Set BRIGHTNESS to about 1/5 (max = 255)
+
+   mn_strip = new Adafruit_NeoPixel (NUMPIXELS - MINUTES_off, WS2812_PIN_MN, NEO_GRB + NEO_KHZ800);              
+   mn_strip->begin();            // INITIALIZE NeoPixel strip object (REQUIRED)
+   mn_strip->clear();            // Turn OFF all pixels ASAP
+   mn_strip->setBrightness(25);  // Set BRIGHTNESS to about 1/5 (max = 255)
 }
 
 //
 // Change the brightness
 //
-void SetBrightness (int b)
+void setBrightnessLeds (int b)
 {
-  strip->setBrightness (b);
+  hr_strip->setBrightness (b);
+  mn_strip->setBrightness (b);
 }
 
 // ---------------
 // display the time
 // ---------------
-void leds_showtime (int hours, int minutes, int seconds)
+
+
+// display time : 
+// a debug version on a single strip 
+// light leds at pos #{hour} and #{minute}
+void _________leds_showtime (int hours, int minutes, int seconds)
+{
+static int count=100;
+     // strip.setPixelColor ( (seconds-2) % 15,   0);
+     hr_strip->clear ();
+     uint32_t color = pgm_read_dword_near (tColors + count);
+     if (minutes!=-1)
+         hr_strip->setPixelColor (  minutes    % 15,   color ); 
+     color = pgm_read_dword_near (tColors + count + NUMPIXELS/2);
+     if (hours != -1)
+         hr_strip->setPixelColor (  hours    % 12,   color ); 
+     hr_strip->show ();
+     count = (count + 1) % (NUMPIXELS/2);
+}
+
+// display a single word knowing pos and len
+static void display_word (Adafruit_NeoPixel *strip, int pos, int len, int color_offset)
+{
+   for (int i=pos ; i<pos + len ; i++)
+         strip->setPixelColor ( i ,  pgm_read_dword (tColors + i + color_offset));
+} // display_word
+
+
+// display all words by retrieving pos and len from data table
+// if params is set to -1, it is not displayed to make a blinking effect
+void showtimeLeds (int hours, int minutes, int seconds)
 {
 union u_Words data;
 
-  disp_Horloge (hours, minutes, & data);
-  for (int row=0 ; row<14 ; row++)
-  {
-    for (int i=0 ; i<COTE ; i++)
-          strip->setPixelColor (i, 0);
-    // a blinking red 
-    if (row%2==0) strip->setPixelColor (0, 50, 0, 0);
-    for (int ark=0 ; ark < 5 ; ark++)
-    {
-       if (data.words[ark].pos / 14 == row ) 
-       {
-         for (int i=data.words[ark].pos ; i<data.words[ark].pos + data.words[ark].len ; i++)
-              strip->setPixelColor ( i % 14,  pgm_read_dword_near (tColors + i));
-       } 
-    }
-    strip->show();     
-    delay (500);
-  } 
+  disp_Horloge (hours, minutes, & data); // retrieve matrix
+  
+  hr_strip->clear();            // Turn OFF all pixels 
+  display_word (hr_strip, 0, 2, 0);   // IL 
+  display_word (hr_strip, 3, 3, 0);   // EST
+  display_word (hr_strip, data.s.h.word1.pos, data.s.h.word1.len, 0);
+  display_word (hr_strip, data.s.h.word2.pos, data.s.h.word2.len, 0);
+  hr_strip->show();     
 
-}
-
-
-static int count=100;
-
-// display time : 
-// if params is set to -1, it is not displayed to make a blinking effect
-void ____leds_showtime (int hours, int minutes, int seconds)
-{
-     // strip.setPixelColor ( (seconds-2) % 15,   0);
-     for (int ark=0 ; ark<COTE ; ark++)
-        strip->setPixelColor (ark, 0);
-
-     uint32_t color = pgm_read_dword_near (tColors + count);
-     if (minutes!=-1)
-         strip->setPixelColor (  minutes    % 15,   color ); 
-
-     color = pgm_read_dword_near (tColors + count + NUMPIXELS/2);
-     if (hours != -1)
-         strip->setPixelColor (  hours    % 12,   color ); 
-
-     strip->show ();
-     count = (count + 1) % (NUMPIXELS/2);
-}
+  mn_strip->clear();            // Turn OFF all pixels 
+  display_word (mn_strip, data.s.m.word1.pos, data.s.m.word1.len, MINUTES_off);
+  display_word (mn_strip, data.s.m.word2.pos, data.s.m.word2.len, MINUTES_off);
+  display_word (mn_strip, data.s.m.word3.pos, data.s.m.word3.len, MINUTES_off);
+  mn_strip->show();     
+}  // leds_showtime

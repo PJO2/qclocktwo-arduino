@@ -1,6 +1,6 @@
 // ---------------------------
-// Detect Brightness using a 5606 Photo resistor
+// Detect Brightness using a 5628 Photo resistor
 // ---------------------------
 
-void PhotoResInit (int VccPin, int SensorPin);
-int PhotoResDetect (int VccPin, int SensorPin);
+void initPhotoRes (int VccPin, int SensorPin);
+int  detectPhotoRes (int VccPin, int SensorPin);

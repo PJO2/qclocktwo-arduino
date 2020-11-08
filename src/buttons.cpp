@@ -6,6 +6,7 @@
 
 #include <Arduino.h>
 #include "ds3231.h"
+#include "logger.h"
 #include "leds.h"
 
 #define POLLING_TIMER 100  // scans button every 100ms
@@ -28,11 +29,12 @@ static struct S_Button
 }
 tButtons[NB_BUTTONS];
 
+static int signalPin;
 
 // ------------------------------------
 // init the "User Interface"
 // note that the modePin can not been changed since it uses the hardware interrupt pin 
-void init_UI (int modePin, int editPin)
+void init_UI (int modePin, int editPin, int uiPin)
 {
   // record buttons status
   tButtons[MODE].pin = modePin;
@@ -43,6 +45,8 @@ void init_UI (int modePin, int editPin)
   // activate input on the pins
   pinMode (modePin, INPUT);
   pinMode (editPin, INPUT);
+  pinMode (uiPin, OUTPUT);
+  signalPin = uiPin;
 } // init_UI
 
 
@@ -53,23 +57,23 @@ void init_UI (int modePin, int editPin)
 static int manage_UI ()
 {
 int ark;
-    for (ark=0 ; ark<NB_BUTTONS ; ark++)
+    for (ark=NB_BUTTONS-1 ; ark>=0 ; ark--)
     {
       if ( digitalRead (tButtons[ark].pin)==LOW  && tButtons[ark].state==PRESSED  )
       {
-           // Serial.println ("Action: release button");
+         Log (logWARN, F("Action: release button"));
          tButtons[ark].state  = RELEASED;
       }
       if ( digitalRead (tButtons[ark].pin)==HIGH && tButtons[ark].state==RELEASED )
       {
-          // Serial.println ("Action: press button");
+         Log (logWARN, F("Action: release button"));
          tButtons[ark].state   = PRESSED;
          tButtons[ark].pressed = true;
          lastActionTime = millis();   // reset timeout
-         return ark; // assume that two buttons are not pressed in the same 1/10s
+         break;    // <-- assume that two buttons are not pressed in the same 1/10s
       }
     }
-    return -1;
+    return ark;
 } // manage_UI
 
 // display with blinking effect
@@ -77,7 +81,7 @@ static void blinking_display (int action, const struct S_hrminsec *tm)
 {
 static int count=0;                  // count loop iterations for blinking effect
     count ++;
-    leds_showtime ( (action==EDIT_HOURS   && count %3==0) ?  -1 : tm->hours,
+    showtimeLeds ( (action==EDIT_HOURS   && count %3==0) ?  -1 : tm->hours,
                     (action==EDIT_MINUTES && count %3==0) ?  -1 : tm->minutes, 
                     tm->seconds);
 } // blinking_display 
@@ -92,6 +96,9 @@ void enter_UI ()
 int  action = EDIT_NONE;      // current action : edit hours
 struct S_hrminsec tm; 
 int    idx;                    // button activated
+
+  digitalWrite (signalPin, HIGH);   // highlight a led to tag menu mode 
+
   tm = DS3231_getTime ();         // read current time before update
   lastActionTime = millis();      // A poor man's timeout
 
@@ -128,4 +135,5 @@ int    idx;                    // button activated
   } // until done or timeout
   
   delay (POLLING_TIMER / 2); // a debounce timer for the mode button 
+  digitalWrite (signalPin, LOW);  // tag the menu mode exit 
 } // UI()

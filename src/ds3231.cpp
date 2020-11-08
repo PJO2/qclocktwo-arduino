@@ -12,6 +12,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "ds3231.h"
+#include "logger.h"
 
 // BCD conversion routines (do not exist natively in the ATxx processors)
 uint8_t _toBcd(uint8_t num)   { return ((num / 10) << 4) + (num % 10); }
@@ -46,7 +47,7 @@ void DS3231_setTime (int hours, int minutes, int seconds) {
   Wire.write(DS3231_SECONDS);
   Wire.write(_toBcd(seconds));
   Wire.write(_toBcd(minutes));
-  Wire.write(_toBcd(hours) | DS3231_24H);
+  Wire.write(_toBcd(hours) & ~DS3231_24H);    // set 24 hour mode
   Wire.endTransmission();           
 }
 
@@ -61,45 +62,20 @@ struct S_hrminsec tm;
   Wire.requestFrom(DS3231_ADDR,3);    
   tm.seconds = _fromBcd (Wire.read ());
   tm.minutes = _fromBcd (Wire.read ());
-  tm.hours   = _fromBcd (Wire.read () & ~DS3231_24H );
+  tm.hours   = _fromBcd (Wire.read ());  // 24 hour format : direct read
   return tm;
 }
 
-// Program the RTC clock to send an alarm every second
-// process described in the datasheet https://datasheets.maximintegrated.com/en/ds/DS3231.pdf
-// Figure 1 page 11
-void DS3231_setAlarmEverySecond() {
-  int ctrl_reg = 0;
-  Wire.beginTransmission(DS3231_ADDR);  
-  Wire.write(DS3231_ALARM1_SECONDS);                
-  Wire.write(0x80);
-  Wire.write(0x80);
-  Wire.write(0x80);
-  Wire.write(0x80);
-  Wire.endTransmission();           
-
-  ctrl_reg = DS3231_readRegister(DS3231_CONTROL);
-  DS3231_writeRegister(DS3231_CONTROL, ctrl_reg | 0x05);
-} // DS3231_setAlarmEverySecond
+// init RTC clock and wire library
+void initDS3231 ()
+{
+  Wire.begin ();   // init I2C library
+  DS3231_writeRegister(DS3231_CONTROL,0);   // reset control register
+  DS3231_writeRegister(DS3231_STATUS,0);    // reset status register
+} // initDS3231
 
 
-// Same for every minute
-void DS3231_setAlarmEveryMinute() {
-  int ctrl_reg = 0;
-  Wire.beginTransmission(DS3231_ADDR);  
-  Wire.write(DS3231_ALARM2_MINUTES);                
-  Wire.write(0x80);
-  Wire.write(0x80);
-  Wire.write(0x80);
-  Wire.endTransmission();           
-
-  ctrl_reg = DS3231_readRegister(DS3231_CONTROL);
-  DS3231_writeRegister(DS3231_CONTROL, ctrl_reg | 0x06);
-} // DS3231_setAlarmEveryMinute
-
-
-
-// Clear the interruption flag from alarm 1
+// Clear the interruption flag from Alarm1 or Alarm2
 // process described in the datasheet page 14 of
 // https://datasheets.maximintegrated.com/en/ds/DS3231.pdf
 // BEWARE: Wire library is using interruptions, this procedure should
@@ -111,25 +87,49 @@ void DS3231_clearA1F()
   DS3231_writeRegister(DS3231_STATUS, status_reg & ~0x01);
 }
 
-
 void DS3231_clearA2F()
 {
   int status_reg = DS3231_readRegister(DS3231_STATUS);
   DS3231_writeRegister(DS3231_STATUS, status_reg & ~0x02);
 }
 
-void DS3231_reset ()
-{
-  DS3231_writeRegister(DS3231_CONTROL,0);
-  DS3231_writeRegister(DS3231_STATUS,0);
-}
+// Program the Alarm1 of RTC clock to send an alarm every second
+// process described in the datasheet https://datasheets.maximintegrated.com/en/ds/DS3231.pdf
+// Figure 1 page 11
+void DS3231_setAlarmEverySecond() {
+  int ctrl_reg = 0;
+  Wire.beginTransmission(DS3231_ADDR);  
+  Wire.write(DS3231_ALARM1_SECONDS);                
+  Wire.write(0x80);
+  Wire.write(0x80);
+  Wire.write(0x80);
+  Wire.write(0x80);
+  Wire.endTransmission();           
+  DS3231_clearA1F();   // clear previous interrupt flag 
+  // then enable alarm 1 interrupt
+  ctrl_reg = DS3231_readRegister(DS3231_CONTROL);
+  DS3231_writeRegister(DS3231_CONTROL, ctrl_reg | 0x05);
+} // DS3231_setAlarmEverySecond
 
 
-void DS3231_DisplayTimeToSerial()
+// Same Alarm2 to create interrupt for every minute
+void DS3231_setAlarmEveryMinute() {
+  int ctrl_reg = 0;
+  Wire.beginTransmission(DS3231_ADDR);  
+  Wire.write(DS3231_ALARM2_MINUTES);                
+  Wire.write(0x80);
+  Wire.write(0x80);
+  Wire.write(0x80);
+  Wire.endTransmission();           
+
+  DS3231_clearA2F();   // clear previous interrupt flag 
+  // enable alarm 2 interrupt
+  ctrl_reg = DS3231_readRegister(DS3231_CONTROL);
+  DS3231_writeRegister(DS3231_CONTROL, ctrl_reg | 0x06);
+} // DS3231_setAlarmEveryMinute
+
+// debug function to send RTC time to console
+void DS3231_DisplayTimeToSerial(const struct S_hrminsec *ptm)
 {
-char buf[128];
-struct S_hrminsec tm = DS3231_getTime ();
-   sprintf (buf, "il est %d heures, %d minutes et %d seconds", tm.hours, tm.minutes, tm.seconds);
-   Serial.println (buf);
-   delay (100);
+     Log (logINFO, F("current time: %02d:%02d.%02d"), ptm->hours, ptm->minutes, ptm->seconds);
 } // DS3231_DisplayTimeToSerial

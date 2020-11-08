@@ -10,24 +10,24 @@
 #include "photoresistor.h"
 
 #define NB_VALS 6
-#define BRIGHTNESS_MULTIPLIER 6
+#define BRIGHTNESS_MULTIPLIER 6     // may be increased to increase brightness
 
-static int lightCal[NB_VALS];
-static int read_idx=0;
-static int sum;
+static int lightCal[NB_VALS];       // a circular buffer to save previous measures
+static int read_idx=0;              // current position in the circular buffer
+static int sum;                     // the sum of the circular buffer
 
-void PhotoResInit (int VccPin, int SensorPin)
+void initPhotoRes (int VccPin, int SensorPin)
 {
   pinMode(VccPin,   OUTPUT);
   pinMode(SensorPin, INPUT);   
 
   // fill buffer
   for (int ark=0 ; ark<NB_VALS ; ark ++)
-     PhotoResDetect (VccPin, SensorPin);
-} // PhotoResInit 
+     detectPhotoRes (VccPin, SensorPin);
+} // initPhotoRes
 
 
-int PhotoResDetect (int VccPin, int SensorPin)
+int detectPhotoRes (int VccPin, int SensorPin)
 {
 
   digitalWrite (VccPin, HIGH);       // Activate current just for a while
@@ -43,4 +43,4 @@ int PhotoResDetect (int VccPin, int SensorPin)
 
   int bright =  sqrt ( sum / NB_VALS ) * BRIGHTNESS_MULTIPLIER;
   return bright > 255 ? 255 : bright ;
-} // PhotoResDetect
+} // detectPhotoRes

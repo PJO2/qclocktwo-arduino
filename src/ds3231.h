@@ -13,9 +13,9 @@ struct S_hrminsec
 };
 
 
-#define DS3231_ADDR  0x68                 // I2C address od the DS3231 RTC clock
+#define DS3231_ADDR  0x68                 // I2C address od the DS3231 RTC clock page 11
 
-#define DS3231_24H   (1<<6)               // 24h format
+#define DS3231_24H   (0<<6)               // 24h format (see datasheet)
 
 // DS3231 registers starting from address 0
 enum { 
@@ -33,9 +33,9 @@ void DS3231_setTime (int hours, int minutes, int seconds) ;
 struct S_hrminsec DS3231_getTime ();
 void DS3231_setAlarmEverySecond();
 void DS3231_setAlarmEveryMinute();
-void DS3231_reset ();
+void initDS3231 ();
 
 void DS3231_clearA1F();      // do NOT use inside interruption routine
 void DS3231_clearA2F();      // do NOT use inside interruption routine
 
-void DS3231_DisplayTimeToSerial(void); // for debug
+void DS3231_DisplayTimeToSerial(const struct S_hrminsec *ptm);  // for debug
