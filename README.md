@@ -1,2 +1,4 @@
 # qlocktwo-arduino
-A qlocktwo clone for Arduino
+A word clock clone for Arduino
+
+![clock](https://raw.githubusercontent.com/PJO2/qlocktwo-arduino/main/qclock.png)
