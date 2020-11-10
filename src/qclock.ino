@@ -110,18 +110,22 @@ void showTime ()
 {
 struct S_hrminsec  tm ; 
 int bright;
+static uint8_t last_minutes = -1;
 
      // adjust brightness
      bright = detectPhotoRes (PHOTO_IN, PHOTO_SENSOR);
      setBrightnessLeds (bright);
      Log (logDEBUG, F("brightness: %d"), bright);
 
-     // display time
-     tm = DS3231_getTime ();
-     showtimeLeds (tm.hours, tm.minutes, tm.seconds);
-
-     // provide dome log if needed
-     DS3231_DisplayTimeToSerial (& tm);
+     tm = DS3231_getTime ();   // get current time
+     if (tm.minutes != last_minutes) // time has changed ?
+     {
+        // display time
+        showtimeLeds (tm.hours, tm.minutes, tm.seconds);
+        // provide dome log if needed
+        DS3231_DisplayTimeToSerial (& tm);
+        last_minutes = tm.minutes;
+     }
 } // ShowTime
 
 
