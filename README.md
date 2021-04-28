@@ -1,5 +1,5 @@
 # qlocktwo-arduino
-The complete code for a word clock clone for Arduin. 
+The complete code for a word clock clone for Arduino. 
 
 ![clock](https://raw.githubusercontent.com/PJO2/qlocktwo-arduino/main/qclock.png)
 
